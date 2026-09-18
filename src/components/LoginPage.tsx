@@ -29,7 +29,7 @@ export const LoginPage: React.FC = () => {
       if (data.user?.role === 'SUPER_ADMIN') {
         navigate('/admin', { replace: true });
       } else {
-        navigate('/', { replace: true });
+        navigate('/dashboard', { replace: true });
       }
     } catch {
       setError('Could not reach the server. Please try again.');

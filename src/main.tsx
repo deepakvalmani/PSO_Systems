@@ -15,7 +15,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin/*" element={<AdminPortal />} />
-        <Route path="/*" element={<ProtectedErpApp />} />
+        <Route path="/dashboard/*" element={<ProtectedErpApp />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
