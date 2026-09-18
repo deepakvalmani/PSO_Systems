@@ -1,4 +1,4 @@
-import { createApp } from '../server';
+import { createApp } from '../app-server';
 
 // Reused across warm invocations of the same serverless instance so we don't
 // re-run initDb() (and reconnect to Mongo) on every single request.
