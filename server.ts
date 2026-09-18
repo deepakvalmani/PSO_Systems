@@ -1,7 +1,6 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'path';
-import { createServer as createViteServer } from 'vite';
 import { getDb, saveDb, initDb, recalculateLedgerInMemory, clearAllData, getSettingsForOrg } from './server/db';
 import { getMongoStatus, saveAllToMongo } from './server/mongo';
 import {
@@ -1927,6 +1926,9 @@ export async function createApp() {
   // build/rewrites (see vercel.json) — this function only ever handles /api/*.
   if (!IS_SERVERLESS) {
     if (process.env.NODE_ENV !== 'production') {
+      // Dynamic import: keeps `vite` (a dev-only dependency here) out of the
+      // Vercel serverless function bundle entirely — it's never needed there.
+      const { createServer: createViteServer } = await import('vite');
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: 'spa',
