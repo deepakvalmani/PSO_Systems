@@ -6,3 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Runtime local-dev data cache — can contain real password hashes once seeded.
+# Never commit real data here; production must run on MONGODB_URI.
+data/ledger_store.json
