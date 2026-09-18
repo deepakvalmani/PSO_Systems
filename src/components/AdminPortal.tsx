@@ -262,7 +262,7 @@ const CreatePumpModal: React.FC<{
     address: '',
     city: '',
     username: '',
-    password: randomPassword(),
+    password: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -335,6 +335,7 @@ const CreatePumpModal: React.FC<{
               <input
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Type a password or click Generate"
                 className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-md font-mono focus:outline-hidden focus:border-slate-400"
               />
               <button
