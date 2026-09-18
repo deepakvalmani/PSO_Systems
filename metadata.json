@@ -1,0 +1,6 @@
+{
+  "name": "LedgerOne Enterprise ERP",
+  "description": "Clean enterprise accounting, ledger analytics, account 360, and financial reporting system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
