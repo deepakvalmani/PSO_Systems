@@ -23,6 +23,7 @@ export const AdminPortal: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [createdCreds, setCreatedCreds] = useState<{ username: string; password: string; orgName: string } | null>(null);
   const [resetCreds, setResetCreds] = useState<{ username: string; password: string } | null>(null);
+  const [resetTarget, setResetTarget] = useState<OrgRow | null>(null);
 
   useEffect(() => {
     fetch('/api/auth/me', { credentials: 'include' })
@@ -77,8 +78,7 @@ export const AdminPortal: React.FC = () => {
     loadOrgs();
   };
 
-  const resetPassword = async (org: OrgRow) => {
-    const password = randomPassword();
+  const submitPasswordReset = async (org: OrgRow, password: string) => {
     const res = await fetch(`/api/admin/organizations/${org._id}/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -86,7 +86,9 @@ export const AdminPortal: React.FC = () => {
       body: JSON.stringify({ password }),
     });
     const data = await res.json();
-    if (res.ok) setResetCreds({ username: data.username, password: data.password });
+    if (!res.ok) throw new Error(data.error || 'Failed to change password');
+    setResetTarget(null);
+    setResetCreds({ username: data.username, password: data.password });
   };
 
   return (
@@ -185,8 +187,8 @@ export const AdminPortal: React.FC = () => {
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end space-x-2">
                       <button
-                        onClick={() => resetPassword(org)}
-                        title="Reset password"
+                        onClick={() => setResetTarget(org)}
+                        title="Change password"
                         className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded"
                       >
                         <KeyRound className="w-4 h-4" />
@@ -230,9 +232,17 @@ export const AdminPortal: React.FC = () => {
         />
       )}
 
+      {resetTarget && (
+        <ChangePasswordModal
+          org={resetTarget}
+          onClose={() => setResetTarget(null)}
+          onSubmit={(password) => submitPasswordReset(resetTarget, password)}
+        />
+      )}
+
       {resetCreds && (
         <CredentialsModal
-          title="Password reset"
+          title="Password changed"
           username={resetCreds.username}
           password={resetCreds.password}
           onClose={() => setResetCreds(null)}
@@ -348,6 +358,86 @@ const CreatePumpModal: React.FC<{
             className="px-4 py-2 text-sm font-semibold bg-slate-900 text-white rounded-md hover:bg-slate-800 disabled:opacity-60"
           >
             {submitting ? 'Creating...' : 'Create Pump'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ChangePasswordModal: React.FC<{
+  org: OrgRow;
+  onClose: () => void;
+  onSubmit: (password: string) => Promise<void>;
+}> = ({ org, onClose, onSubmit }) => {
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const submit = async () => {
+    setError(null);
+    if (password.trim().length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await onSubmit(password);
+    } catch (err: any) {
+      setError(err.message || 'Failed to change password');
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-sm p-6">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-lg font-semibold text-slate-900">Change Password</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-xs text-slate-500 mb-4">
+          For <span className="font-medium text-slate-700">{org.name}</span>. Type the new password in
+          plain text below — it's hashed on the server before being stored, never saved as-is.
+        </p>
+
+        {error && (
+          <div className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-md px-3 py-2 mb-3">
+            {error}
+          </div>
+        )}
+
+        <label className="block text-xs font-medium text-slate-600 mb-1">New Password</label>
+        <div className="flex space-x-2">
+          <input
+            autoFocus
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && submit()}
+            placeholder="e.g. ahmedNewPass2026"
+            className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-md font-mono focus:outline-hidden focus:border-slate-400"
+          />
+          <button
+            type="button"
+            onClick={() => setPassword(randomPassword())}
+            className="px-3 py-2 text-xs font-medium border border-slate-200 rounded-md hover:bg-slate-50"
+          >
+            Generate
+          </button>
+        </div>
+
+        <div className="flex justify-end space-x-2 mt-6">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-md">
+            Cancel
+          </button>
+          <button
+            onClick={submit}
+            disabled={submitting}
+            className="px-4 py-2 text-sm font-semibold bg-slate-900 text-white rounded-md hover:bg-slate-800 disabled:opacity-60"
+          >
+            {submitting ? 'Saving...' : 'Change Password'}
           </button>
         </div>
       </div>
