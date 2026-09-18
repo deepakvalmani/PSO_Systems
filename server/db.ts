@@ -37,9 +37,16 @@ export function makeDefaultSettingsForOrg(organizationId: string, businessName?:
   };
 }
 
-// Ensure data directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+// Ensure data directory exists. Best-effort only: on read-only/ephemeral
+// filesystems (e.g. Vercel serverless functions), this local JSON store is
+// unavailable and unnecessary as long as MongoDB is configured — Mongo is
+// always tried first in initDb()/getDb() below.
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (err) {
+  console.warn('[DB] Local data directory unavailable (expected on read-only filesystems):', (err as Error).message);
 }
 
 let dbCache: DatabaseSchema | null = null;

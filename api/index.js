@@ -255,8 +255,12 @@ function makeDefaultSettingsForOrg(organizationId, businessName) {
     businessName: businessName || defaultSettings.businessName
   };
 }
-if (!import_fs.default.existsSync(DATA_DIR)) {
-  import_fs.default.mkdirSync(DATA_DIR, { recursive: true });
+try {
+  if (!import_fs.default.existsSync(DATA_DIR)) {
+    import_fs.default.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (err) {
+  console.warn("[DB] Local data directory unavailable (expected on read-only filesystems):", err.message);
 }
 var dbCache = null;
 var isMongoInitialized = false;
