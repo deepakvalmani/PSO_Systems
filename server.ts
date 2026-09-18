@@ -28,9 +28,10 @@ import {
 } from './server/auth';
 import { PLANS, DEFAULT_PLAN_ID, getPlanFeatures } from './server/plans';
 
-async function startServer() {
+const IS_SERVERLESS = !!process.env.VERCEL;
+
+export async function createApp() {
   const app = express();
-  const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json());
   app.use(cookieParser());
@@ -1922,24 +1923,34 @@ async function startServer() {
     res.status(err?.statusCode || 500).json({ error: err?.message || 'Internal server error' });
   });
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+  // On Vercel, static assets + SPA fallback are served by Vercel's static
+  // build/rewrites (see vercel.json) — this function only ever handles /api/*.
+  if (!IS_SERVERLESS) {
+    if (process.env.NODE_ENV !== 'production') {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+    } else {
+      const distPath = path.join(process.cwd(), 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    }
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
-  });
+  return app;
 }
 
-startServer();
+// Only boot a long-running listener for local dev / traditional hosting.
+// On Vercel, api/index.ts imports createApp() instead and this is skipped.
+if (!IS_SERVERLESS) {
+  createApp().then((app) => {
+    const PORT = Number(process.env.PORT) || 3000;
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on http://0.0.0.0:${PORT}`);
+    });
+  });
+}
